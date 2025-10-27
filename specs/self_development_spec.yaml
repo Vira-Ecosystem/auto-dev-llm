@@ -1,0 +1,363 @@
+project_name: "auto-dev-llm-self-improvement"
+description: "توسعه خود سیستم Auto-Dev-LLM با استفاده از خودش"
+version: "0.2.0"
+
+# تنظیمات LLM
+llm:
+  mode: "online" # استفاده از Claude/GPT برای کیفیت بالا
+  online:
+    provider: "anthropic"
+    api_key_env: "ANTHROPIC_API_KEY"
+    model: "claude-sonnet-4"
+  fallback_online: true
+  mcp:
+    api_url: "http://localhost:5005"
+    timeout: 300
+    retry: 3
+
+# تنظیمات Scheduler
+scheduler:
+  active_hours:
+    start: 0 # 24/7 برای توسعه سریع
+    end: 24
+  max_concurrent_tasks: 3 # افزایش همزمانی
+  check_interval: 30
+  cpu_threshold: 85
+
+# تنظیمات Git
+git:
+  auto_commit: true
+  commit_message_template: "🤖 Auto-generated: {task_name} - {feature_name}"
+  branch_pattern: "auto-dev/phase-2/{feature_name}"
+  auto_push: false
+
+# تنظیمات Versioning
+versioning:
+  semantic_versioning: true
+  auto_bump: true
+  version_file: "VERSION"
+  rules:
+    major: ["breaking", "major"]
+    minor: ["feature", "feat", "add"]
+    patch: ["fix", "patch", "refactor", "improve"]
+
+# تنظیمات Logging
+logging:
+  log_path: "./logs"
+  level: "DEBUG"
+  per_feature_log: true
+  rotation: "1 day"
+  retention: "7 days"
+
+# تنظیمات Rollback
+rollback:
+  enabled: true
+  backup_path: "./backups"
+  max_backups: 20
+  auto_rollback_on_error: true
+
+# تنظیمات Deploy
+deploy:
+  enabled: false # غیرفعال برای توسعه محلی
+  type: "canary"
+
+# Features برای توسعه فاز 2
+features:
+  # اولویت 1: Git Utilities
+  - name: "git-automation"
+    priority: 1
+    description: "خودکارسازی کامل عملیات Git"
+    tasks:
+      - name: "git-wrapper"
+        description: |
+          ایجاد GitWrapper class با قابلیت‌های:
+          - Initialize repository
+          - Stage files (add)
+          - Commit با message template
+          - Create branches
+          - Checkout branches
+          - Merge branches
+          - Push to remote
+          - Pull from remote
+          - Get commit history
+          - Diff between commits
+          - استفاده از GitPython
+        files:
+          - "src/utils/git_utils.py"
+        tests:
+          - "tests/test_git_utils.py"
+
+      - name: "commit-manager"
+        description: |
+          CommitManager برای مدیریت هوشمند commit ها:
+          - Auto-stage generated files
+          - Generate commit message از task info
+          - Group related changes
+          - Commit hooks
+          - Pre-commit validation
+        files:
+          - "src/managers/commit_manager.py"
+        tests:
+          - "tests/test_commit_manager.py"
+
+  # اولویت 2: Version Management
+  - name: "version-control"
+    priority: 2
+    description: "مدیریت نسخه‌بندی Semantic"
+    tasks:
+      - name: "version-manager"
+        description: |
+          VersionManager برای Semantic Versioning:
+          - خواندن VERSION file یا pyproject.toml
+          - تشخیص نوع تغییر (major/minor/patch)
+          - Auto-bump version
+          - Git tagging
+          - Changelog generation
+          - Version validation
+          - Rollback version
+        files:
+          - "src/managers/version_manager.py"
+        tests:
+          - "tests/test_version_manager.py"
+
+      - name: "changelog-generator"
+        description: |
+          ChangelogGenerator برای ساخت CHANGELOG.md:
+          - Parse commit messages
+          - Group by type (feat, fix, breaking)
+          - Generate markdown
+          - Update CHANGELOG.md
+          - Link to commits/PRs
+        files:
+          - "src/utils/changelog.py"
+        tests:
+          - "tests/test_changelog.py"
+
+  # اولویت 3: Rollback System
+  - name: "rollback-recovery"
+    priority: 3
+    description: "سیستم بازگشت و بازیابی"
+    tasks:
+      - name: "backup-manager"
+        description: |
+          BackupManager برای مدیریت نسخه‌های پشتیبان:
+          - Create backup قبل از هر task
+          - Compress backups (tar.gz)
+          - Manage backup retention
+          - List available backups
+          - Restore from backup
+          - Clean old backups
+        files:
+          - "src/managers/backup_manager.py"
+        tests:
+          - "tests/test_backup_manager.py"
+
+      - name: "rollback-manager"
+        description: |
+          RollbackManager برای بازگشت خودکار:
+          - Detect failures (exceptions, test fails)
+          - Auto-restore از backup
+          - Git reset/revert
+          - Notify user
+          - Log rollback operations
+          - Manual rollback command
+        files:
+          - "src/managers/rollback_manager.py"
+        tests:
+          - "tests/test_rollback_manager.py"
+
+  # اولویت 4: Deploy System
+  - name: "deploy-automation"
+    priority: 4
+    description: "سیستم استقرار خودکار"
+    tasks:
+      - name: "deploy-strategy"
+        description: |
+          DeployStrategy base class و پیاده‌سازی Canary:
+          - Abstract DeployStrategy class
+          - CanaryDeployStrategy (10% -> 50% -> 100%)
+          - BlueGreenDeployStrategy
+          - RollingDeployStrategy
+          - Health check integration
+          - Rollback on failure
+        files:
+          - "src/managers/deploy_strategy.py"
+        tests:
+          - "tests/test_deploy_strategy.py"
+
+      - name: "deploy-manager"
+        description: |
+          DeployManager اصلی:
+          - Execute deploy strategy
+          - Monitor health checks
+          - Control traffic splitting
+          - Auto-rollback on failure
+          - Deploy notifications
+          - Deploy history
+        files:
+          - "src/managers/deploy_manager.py"
+        tests:
+          - "tests/test_deploy_manager.py"
+
+      - name: "health-checker"
+        description: |
+          HealthChecker برای بررسی سلامت:
+          - HTTP endpoint checks
+          - Response time monitoring
+          - Status code validation
+          - Custom health validators
+          - Retry mechanism
+          - Alert on failure
+        files:
+          - "src/utils/health_checker.py"
+        tests:
+          - "tests/test_health_checker.py"
+
+  # اولویت 5: Prompt Engineering
+  - name: "prompt-system"
+    priority: 5
+    description: "سیستم پیشرفته Prompt Engineering"
+    tasks:
+      - name: "prompt-templates"
+        description: |
+          PromptTemplate system برای تولید کد بهتر:
+          - Base PromptTemplate class
+          - CodeGenerationPrompt
+          - TestGenerationPrompt
+          - RefactoringPrompt
+          - DocumentationPrompt
+          - Template variables
+          - Context injection
+        files:
+          - "src/llm/prompt_templates.py"
+        tests:
+          - "tests/test_prompt_templates.py"
+
+      - name: "prompt-optimizer"
+        description: |
+          PromptOptimizer برای بهبود خودکار:
+          - Analyze LLM responses
+          - Track success rates
+          - A/B testing prompts
+          - Auto-tune parameters
+          - Save best prompts
+          - Prompt versioning
+        files:
+          - "src/llm/prompt_optimizer.py"
+        tests:
+          - "tests/test_prompt_optimizer.py"
+
+      - name: "context-builder"
+        description: |
+          ContextBuilder برای ساخت context بهتر:
+          - Extract relevant files
+          - Parse dependencies
+          - Include related code
+          - Add docstrings
+          - Format for LLM
+          - Context size management
+        files:
+          - "src/llm/context_builder.py"
+        tests:
+          - "tests/test_context_builder.py"
+
+  # اولویت 6: Testing & Quality
+  - name: "quality-assurance"
+    priority: 6
+    description: "سیستم تست و کیفیت خودکار"
+    tasks:
+      - name: "test-runner"
+        description: |
+          TestRunner برای اجرای خودکار تست‌ها:
+          - Run pytest tests
+          - Parse test results
+          - Coverage analysis
+          - Performance benchmarks
+          - Retry failed tests
+          - Generate reports
+        files:
+          - "src/utils/test_runner.py"
+        tests:
+          - "tests/test_test_runner.py"
+
+      - name: "code-analyzer"
+        description: |
+          CodeAnalyzer برای بررسی کیفیت:
+          - Syntax checking (ast)
+          - Style checking (flake8, black)
+          - Type checking (mypy)
+          - Complexity analysis
+          - Security scanning
+          - Generate fix suggestions
+        files:
+          - "src/utils/code_analyzer.py"
+        tests:
+          - "tests/test_code_analyzer.py"
+
+      - name: "quality-gate"
+        description: |
+          QualityGate برای تایید کیفیت:
+          - Define quality thresholds
+          - Check test coverage
+          - Check code style
+          - Check complexity
+          - Block on failures
+          - Generate quality reports
+        files:
+          - "src/utils/quality_gate.py"
+        tests:
+          - "tests/test_quality_gate.py"
+
+  # اولویت 7: File Management
+  - name: "file-operations"
+    priority: 7
+    description: "مدیریت پیشرفته فایل‌ها"
+    tasks:
+      - name: "file-utils"
+        description: |
+          FileUtils برای عملیات فایل:
+          - Safe file write (atomic)
+          - Backup before modify
+          - Template rendering
+          - File comparison
+          - Directory operations
+          - Path validation
+        files:
+          - "src/utils/file_utils.py"
+        tests:
+          - "tests/test_file_utils.py"
+
+      - name: "project-structure"
+        description: |
+          ProjectStructureManager:
+          - Analyze project structure
+          - Validate paths
+          - Create directories
+          - Organize files
+          - Detect file types
+          - Generate tree view
+        files:
+          - "src/utils/project_structure.py"
+        tests:
+          - "tests/test_project_structure.py"
+
+  # اولویت 8: Orchestrator Enhancement
+  - name: "orchestrator-v2"
+    priority: 8
+    description: "بهبود Orchestrator با قابلیت‌های جدید"
+    tasks:
+      - name: "enhanced-orchestrator"
+        description: |
+          بهبود Orchestrator فعلی با اضافه کردن:
+          - Integration با تمام managers جدید
+          - Auto-commit after each task
+          - Auto-version bump
+          - Auto-backup before tasks
+          - Quality gate enforcement
+          - Better error handling
+          - Resume from checkpoint
+          - Parallel task execution
+        files:
+          - "src/core/orchestrator_v2.py"
+        tests:
+          - "tests/test_orchestrator_v2.py"
