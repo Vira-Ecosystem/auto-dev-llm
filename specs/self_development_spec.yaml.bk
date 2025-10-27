@@ -1,69 +1,76 @@
 project_name: "auto-dev-llm-self-improvement"
-description: "توسعه خود سیستم با Avalai.ir API"
+description: "توسعه خود سیستم Auto-Dev-LLM با استفاده از خودش"
 version: "0.2.0"
 
-# تنظیمات LLM برای Avalai.ir
+# تنظیمات LLM
 llm:
-  mode: "online"
+  mode: "online" # استفاده از API سفارشی
 
-  # تنظیمات API سفارشی (Avalai.ir)
+  # تنظیمات API سفارشی
   custom_api:
     enabled: true
-    base_url: "https://api.avalai.ir/v1"
-    api_key_env: "AVALAI_API_KEY" # نام متغیر محیطی
-    model: "claude-sonnet-4-20250514"
+    base_url: "https://api.avalai.ir/v1" # 🔧 آدرس سرور شما
+    api_key_env: "aa-" # نام متغیر محیطی
+    model: "claude-sonnet-4-20250514" # Sonnet 4.5
 
-    timeout: 300
-    retry: 3
+    # Headers سفارشی (اختیاری)
+    custom_headers:
+      "X-Custom-Header": "your-value"
 
-    # Headers سفارشی (اگر avalai نیاز داشته باشد)
-    custom_headers: {}
-
-    # Endpoint - احتمالاً OpenAI-compatible است
+    # Endpoint paths (اختیاری - اگر متفاوت باشد)
     endpoints:
-      chat: "/chat/completions"
+      chat: "/chat/completions" # برای OpenAI-compatible
+      # یا: "/messages" برای Anthropic-compatible
 
-  # تنظیمات درخواست
+  # تنظیمات پیش‌فرض برای fallback
   online:
-    provider: "custom"
-    api_key_env: "AVALAI_API_KEY"
+    provider: "custom" # استفاده از custom API
+    api_key_env: "CUSTOM_API_KEY"
     model: "claude-sonnet-4-20250514"
 
+    # تنظیمات درخواست
     timeout: 300
     retry: 3
-    max_tokens: 3000 # کاهش برای کنترل هزینه
+    max_tokens: 4096
     temperature: 0.7
 
-    # Prompt caching برای کاهش 30% هزینه
+    # Prompt caching برای کاهش هزینه
     use_cache: true
 
-  # غیرفعال کردن MCP و fallback
-  fallback_online: false
-  fallback_to_mcp: false
+  # MCP به عنوان fallback ثانویه
+  mcp:
+    api_url: "http://localhost:5005"
+    timeout: 300
+    retry: 2
+
+  # اولویت استفاده
+  fallback_online: false # فقط از custom API استفاده کن
+  fallback_to_mcp: false # در صورت خطا به MCP نرو
+
+# تنظیمات هزینه و محدودیت
+cost_control:
+  enabled: true
+  max_cost_per_task: 0.10 # دلار
+  max_total_cost: 2.00 # دلار
+  warn_threshold: 0.50 # هشدار در 50 سنت
+
+  # Token limits
+  max_input_tokens: 2000
+  max_output_tokens: 3000
 
 # تنظیمات Scheduler
 scheduler:
   active_hours:
-    start: 0
+    start: 0 # 24/7 برای توسعه سریع
     end: 24
-  max_concurrent_tasks: 2 # 2 task همزمان
+  max_concurrent_tasks: 3 # افزایش همزمانی
   check_interval: 30
   cpu_threshold: 85
-
-# کنترل هزینه (مهم!)
-cost_control:
-  enabled: true
-  max_cost_per_task: 0.10 # حداکثر 10 سنت per task
-  max_total_cost: 1.00 # حداکثر 1 دلار برای کل پروژه
-  warn_threshold: 0.50 # هشدار در 50 سنت
-
-  max_input_tokens: 2000
-  max_output_tokens: 3000
 
 # تنظیمات Git
 git:
   auto_commit: true
-  commit_message_template: "🤖 Auto: {task_name} - {feature_name}"
+  commit_message_template: "🤖 Auto-generated: {task_name} - {feature_name}"
   branch_pattern: "auto-dev/phase-2/{feature_name}"
   auto_push: false
 
@@ -75,12 +82,12 @@ versioning:
   rules:
     major: ["breaking", "major"]
     minor: ["feature", "feat", "add"]
-    patch: ["fix", "patch", "refactor"]
+    patch: ["fix", "patch", "refactor", "improve"]
 
 # تنظیمات Logging
 logging:
   log_path: "./logs"
-  level: "INFO"
+  level: "DEBUG"
   per_feature_log: true
   rotation: "1 day"
   retention: "7 days"
@@ -92,9 +99,9 @@ rollback:
   max_backups: 20
   auto_rollback_on_error: true
 
-# تنظیمات Deploy (غیرفعال برای توسعه محلی)
+# تنظیمات Deploy
 deploy:
-  enabled: false
+  enabled: false # غیرفعال برای توسعه محلی
   type: "canary"
 
 # Features برای توسعه فاز 2
@@ -103,95 +110,83 @@ features:
   - name: "git-automation"
     priority: 1
     description: "خودکارسازی کامل عملیات Git"
-    estimated_cost: 0.084
     tasks:
       - name: "git-wrapper"
         description: |
           ایجاد GitWrapper class با قابلیت‌های:
           - Initialize repository
-          - Stage files (git add)
+          - Stage files (add)
           - Commit با message template
-          - Create/checkout branches
+          - Create branches
+          - Checkout branches
           - Merge branches
-          - Push/pull to remote
+          - Push to remote
+          - Pull from remote
           - Get commit history
           - Diff between commits
-          استفاده از GitPython library
+          - استفاده از GitPython
         files:
           - "src/utils/git_utils.py"
         tests:
           - "tests/test_git_utils.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "commit-manager"
         description: |
           CommitManager برای مدیریت هوشمند commit ها:
           - Auto-stage generated files
-          - Generate semantic commit messages
+          - Generate commit message از task info
           - Group related changes
-          - Pre-commit hooks
-          - Commit validation
+          - Commit hooks
+          - Pre-commit validation
         files:
           - "src/managers/commit_manager.py"
         tests:
           - "tests/test_commit_manager.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
   # اولویت 2: Version Management
   - name: "version-control"
     priority: 2
-    description: "مدیریت Semantic Versioning"
-    estimated_cost: 0.084
+    description: "مدیریت نسخه‌بندی Semantic"
     tasks:
       - name: "version-manager"
         description: |
           VersionManager برای Semantic Versioning:
-          - Read/write VERSION file
-          - Auto-detect change type (major/minor/patch)
-          - Bump version automatically
-          - Create git tags
-          - Validate versions
-          - Rollback version support
+          - خواندن VERSION file یا pyproject.toml
+          - تشخیص نوع تغییر (major/minor/patch)
+          - Auto-bump version
+          - Git tagging
+          - Changelog generation
+          - Version validation
+          - Rollback version
         files:
           - "src/managers/version_manager.py"
         tests:
           - "tests/test_version_manager.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "changelog-generator"
         description: |
-          ChangelogGenerator برای CHANGELOG.md:
-          - Parse git commit messages
-          - Group by type (feat/fix/breaking)
-          - Generate markdown changelog
-          - Update CHANGELOG.md file
-          - Link commits and PRs
+          ChangelogGenerator برای ساخت CHANGELOG.md:
+          - Parse commit messages
+          - Group by type (feat, fix, breaking)
+          - Generate markdown
+          - Update CHANGELOG.md
+          - Link to commits/PRs
         files:
           - "src/utils/changelog.py"
         tests:
           - "tests/test_changelog.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
   # اولویت 3: Rollback System
   - name: "rollback-recovery"
     priority: 3
     description: "سیستم بازگشت و بازیابی"
-    estimated_cost: 0.084
     tasks:
       - name: "backup-manager"
         description: |
-          BackupManager برای مدیریت backups:
+          BackupManager برای مدیریت نسخه‌های پشتیبان:
           - Create backup قبل از هر task
           - Compress backups (tar.gz)
-          - Manage retention policy
+          - Manage backup retention
           - List available backups
           - Restore from backup
           - Clean old backups
@@ -199,113 +194,94 @@ features:
           - "src/managers/backup_manager.py"
         tests:
           - "tests/test_backup_manager.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "rollback-manager"
         description: |
           RollbackManager برای بازگشت خودکار:
-          - Detect task failures
-          - Auto-restore from backup
-          - Git reset/revert operations
-          - Notify user of rollback
-          - Log all rollback operations
+          - Detect failures (exceptions, test fails)
+          - Auto-restore از backup
+          - Git reset/revert
+          - Notify user
+          - Log rollback operations
           - Manual rollback command
         files:
           - "src/managers/rollback_manager.py"
         tests:
           - "tests/test_rollback_manager.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
   # اولویت 4: Deploy System
   - name: "deploy-automation"
     priority: 4
     description: "سیستم استقرار خودکار"
-    estimated_cost: 0.126
     tasks:
       - name: "deploy-strategy"
         description: |
-          DeployStrategy base class:
-          - Abstract DeployStrategy
-          - CanaryDeployStrategy implementation
+          DeployStrategy base class و پیاده‌سازی Canary:
+          - Abstract DeployStrategy class
+          - CanaryDeployStrategy (10% -> 50% -> 100%)
           - BlueGreenDeployStrategy
           - RollingDeployStrategy
           - Health check integration
+          - Rollback on failure
         files:
           - "src/managers/deploy_strategy.py"
         tests:
           - "tests/test_deploy_strategy.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "deploy-manager"
         description: |
           DeployManager اصلی:
-          - Execute deployment strategies
+          - Execute deploy strategy
           - Monitor health checks
           - Control traffic splitting
           - Auto-rollback on failure
-          - Deployment notifications
-          - Deployment history
+          - Deploy notifications
+          - Deploy history
         files:
           - "src/managers/deploy_manager.py"
         tests:
           - "tests/test_deploy_manager.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "health-checker"
         description: |
-          HealthChecker برای health monitoring:
+          HealthChecker برای بررسی سلامت:
           - HTTP endpoint checks
           - Response time monitoring
           - Status code validation
           - Custom health validators
           - Retry mechanism
-          - Alert on failures
+          - Alert on failure
         files:
           - "src/utils/health_checker.py"
         tests:
           - "tests/test_health_checker.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
   # اولویت 5: Prompt Engineering
   - name: "prompt-system"
     priority: 5
-    description: "سیستم Prompt Engineering پیشرفته"
-    estimated_cost: 0.126
+    description: "سیستم پیشرفته Prompt Engineering"
     tasks:
       - name: "prompt-templates"
         description: |
-          PromptTemplate system:
+          PromptTemplate system برای تولید کد بهتر:
           - Base PromptTemplate class
           - CodeGenerationPrompt
           - TestGenerationPrompt
           - RefactoringPrompt
           - DocumentationPrompt
-          - Template variables support
+          - Template variables
           - Context injection
         files:
           - "src/llm/prompt_templates.py"
         tests:
           - "tests/test_prompt_templates.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "prompt-optimizer"
         description: |
-          PromptOptimizer برای بهبود:
+          PromptOptimizer برای بهبود خودکار:
           - Analyze LLM responses
           - Track success rates
-          - A/B test prompts
+          - A/B testing prompts
           - Auto-tune parameters
           - Save best prompts
           - Prompt versioning
@@ -313,13 +289,10 @@ features:
           - "src/llm/prompt_optimizer.py"
         tests:
           - "tests/test_prompt_optimizer.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "context-builder"
         description: |
-          ContextBuilder برای بهتر context:
+          ContextBuilder برای ساخت context بهتر:
           - Extract relevant files
           - Parse dependencies
           - Include related code
@@ -330,20 +303,16 @@ features:
           - "src/llm/context_builder.py"
         tests:
           - "tests/test_context_builder.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
-  # اولویت 6: Quality Assurance
+  # اولویت 6: Testing & Quality
   - name: "quality-assurance"
     priority: 6
-    description: "سیستم تست و کیفیت"
-    estimated_cost: 0.126
+    description: "سیستم تست و کیفیت خودکار"
     tasks:
       - name: "test-runner"
         description: |
-          TestRunner برای اجرای تست:
-          - Run pytest automatically
+          TestRunner برای اجرای خودکار تست‌ها:
+          - Run pytest tests
           - Parse test results
           - Coverage analysis
           - Performance benchmarks
@@ -353,30 +322,24 @@ features:
           - "src/utils/test_runner.py"
         tests:
           - "tests/test_test_runner.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "code-analyzer"
         description: |
           CodeAnalyzer برای بررسی کیفیت:
-          - Syntax checking (AST)
+          - Syntax checking (ast)
           - Style checking (flake8, black)
           - Type checking (mypy)
           - Complexity analysis
           - Security scanning
-          - Fix suggestions
+          - Generate fix suggestions
         files:
           - "src/utils/code_analyzer.py"
         tests:
           - "tests/test_code_analyzer.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "quality-gate"
         description: |
-          QualityGate برای enforcement:
+          QualityGate برای تایید کیفیت:
           - Define quality thresholds
           - Check test coverage
           - Check code style
@@ -387,20 +350,16 @@ features:
           - "src/utils/quality_gate.py"
         tests:
           - "tests/test_quality_gate.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
-  # اولویت 7: File Operations
+  # اولویت 7: File Management
   - name: "file-operations"
     priority: 7
-    description: "مدیریت فایل‌ها"
-    estimated_cost: 0.084
+    description: "مدیریت پیشرفته فایل‌ها"
     tasks:
       - name: "file-utils"
         description: |
           FileUtils برای عملیات فایل:
-          - Safe atomic file writes
+          - Safe file write (atomic)
           - Backup before modify
           - Template rendering
           - File comparison
@@ -410,9 +369,6 @@ features:
           - "src/utils/file_utils.py"
         tests:
           - "tests/test_file_utils.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
       - name: "project-structure"
         description: |
@@ -427,21 +383,17 @@ features:
           - "src/utils/project_structure.py"
         tests:
           - "tests/test_project_structure.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
 
-  # اولویت 8: Orchestrator V2
+  # اولویت 8: Orchestrator Enhancement
   - name: "orchestrator-v2"
     priority: 8
-    description: "Orchestrator پیشرفته"
-    estimated_cost: 0.042
+    description: "بهبود Orchestrator با قابلیت‌های جدید"
     tasks:
       - name: "enhanced-orchestrator"
         description: |
-          بهبود Orchestrator با:
-          - Integration با managers جدید
-          - Auto-commit after tasks
+          بهبود Orchestrator فعلی با اضافه کردن:
+          - Integration با تمام managers جدید
+          - Auto-commit after each task
           - Auto-version bump
           - Auto-backup before tasks
           - Quality gate enforcement
@@ -452,6 +404,3 @@ features:
           - "src/core/orchestrator_v2.py"
         tests:
           - "tests/test_orchestrator_v2.py"
-        estimated_tokens:
-          input: 1500
-          output: 2500
