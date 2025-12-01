@@ -1,3 +1,4 @@
+
 """
 Orchestrator - هماهنگ‌کننده اصلی سیستم
 """
@@ -15,6 +16,7 @@ from core.config import ConfigLoader, Feature, Task, ProjectConfig
 from core.task_manager import TaskManager, TaskExecution, TaskResult, TaskStatus
 from llm.llama_wrapper import LLMWrapper, LLMRequest
 from utils.logger import AutoDevLogger
+from reviewers.code_reviewer import AICodeReviewer
 
 
 class Orchestrator:
@@ -24,8 +26,12 @@ class Orchestrator:
         self.spec_path = spec_path
         self.config: Optional[ProjectConfig] = None
         self.config_loader = ConfigLoader(spec_path)
+        self.code_reviewer = None
+
         self.task_manager: Optional[TaskManager] = None
         self.llm_wrapper: Optional[LLMWrapper] = None
+        self.code_reviewer = AICodeReviewer(llm_wrapper=self.llm_wrapper)
+
         self.logger: Optional[AutoDevLogger] = None
         
         # وضعیت اجرا
@@ -313,6 +319,25 @@ class Orchestrator:
             # ثبت نتیجه
             if result.success:
                 self.task_manager.complete_task(task_id, result)
+
+                # بررسی خودکار کد
+                try:
+                    review_result = self.code_reviewer.review_code(
+                        code=result.content,
+                        file_path=task.files[0] if task.files else "generated_code.py"
+                    )
+                    
+                    self.logger.info(f"نمره کیفیت: {review_result.quality_score}/100")
+                    
+                    import os
+                    os.makedirs("logs", exist_ok=True)
+                    report_path = f"logs/review_{task.name}.md"
+                    with open(report_path, 'w', encoding='utf-8') as f:
+                        f.write(self.code_reviewer.generate_report(review_result))
+                    
+                except Exception as e:
+                    self.logger.warning(f"خطا در Review: {e}")
+
             else:
                 self.task_manager.fail_task(task_id, result, retry=True)
         
